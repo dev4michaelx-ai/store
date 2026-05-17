@@ -3,7 +3,12 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 const { Client, GatewayIntentBits } = require('discord.js');
+
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('  MongoDB connected'))
+    .catch(err => console.error('  MongoDB error:', err.message));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
