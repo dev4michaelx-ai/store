@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - 4MC</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="network-canvas" class="network-canvas" aria-hidden="true"></canvas>
+    <div class="grid-overlay"></div>
+
+    <div class="bg-effects">
+        <div class="glow-blob glow-blob-1"></div>
+        <div class="glow-blob glow-blob-2"></div>
+    </div>
+
+    <button class="mobile-sidebar-toggle" id="sidebar-toggle"><i class="fas fa-bars"></i></button>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-top">
+                <a href="/" class="sidebar-brand">
+                    <span class="sidebar-brand-icon"><i class="fas fa-bolt"></i></span>
+                    <span class="sidebar-brand-text"><span>4</span>MC</span>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-label">Browse</span>
+                    <a href="#" class="nav-link active" data-view="browse" data-filter="all">
+                        <i class="fas fa-house"></i><span>All Resources</span>
+                    </a>
+                    <a href="#" class="nav-link" data-view="browse" data-filter="script">
+                        <i class="fas fa-code"></i><span>Scripts</span>
+                    </a>
+                    <a href="#" class="nav-link" data-view="browse" data-filter="maps">
+                        <i class="fas fa-map"></i><span>Maps & MLO</span>
+                    </a>
+                    <a href="#" class="nav-link" data-view="browse" data-filter="vehicle">
+                        <i class="fas fa-car"></i><span>Vehicles</span>
+                    </a>
+                    <a href="#" class="nav-link" data-view="browse" data-filter="clothing">
+                        <i class="fas fa-shirt"></i><span>Clothing</span>
+                    </a>
+                    <a href="#" class="nav-link" data-view="browse" data-filter="tool">
+                        <i class="fas fa-wrench"></i><span>Tools</span>
+                    </a>
+                    <a href="#" class="nav-link" data-view="browse" data-filter="fashion">
+                        <i class="fas fa-gem"></i><span>Fashion</span>
+                    </a>
+                </div>
+                <div class="nav-section admin-section" style="<%= user.isAdmin ? '' : 'display:none' %>">
+                    <span class="nav-section-label">Manage</span>
+                    <a href="#" class="nav-link" data-view="admin">
+                        <i class="fas fa-crown"></i>
+                        <span>Admin Panel <span class="admin-badge">Admin</span></span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="user-card">
+                    <div class="user-avatar">
+                        <% if (user.avatar) { %>
+                            <img src="<%= user.avatar %>" alt="<%= user.username %>">
+                        <% } else { %>
+                            <%= user.username.charAt(0).toUpperCase() %>
+                        <% } %>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name"><%= user.username %></span>
+                        <span class="user-tag">#<%= user.tag %></span>
+                    </div>
+                </div>
+                <a href="/auth/logout" class="sidebar-logout" title="Logout">
+                    <i class="fas fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-topbar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search resources..." id="search-input">
+                </div>
+                <div class="content-actions">
+                    <button class="btn btn-ghost btn-icon" id="grid-view-btn" title="Grid view">
+                        <i class="fas fa-grid-2"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-icon" id="list-view-btn" title="List view">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button class="btn btn-primary" id="add-resource-btn" style="<%= user.isAdmin ? '' : 'display:none' %>">
+                        <i class="fas fa-plus"></i> Add Resource
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <!-- BROWSE VIEW -->
+                <div class="view-panel" id="browse-view">
+                    <div class="stats-row" id="stats-row">
+                        <div class="stat-box">
+                            <div class="stat-box-icon icon-purple"><i class="fas fa-code"></i></div>
+                            <div class="stat-box-info">
+                                <div class="stat-box-value" id="stat-scripts">0</div>
+                                <div class="stat-box-label">Scripts</div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-box-icon icon-green"><i class="fas fa-map"></i></div>
+                            <div class="stat-box-info">
+                                <div class="stat-box-value" id="stat-maps">0</div>
+                                <div class="stat-box-label">Maps & MLO</div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-box-icon icon-orange"><i class="fas fa-car"></i></div>
+                            <div class="stat-box-info">
+                                <div class="stat-box-value" id="stat-vehicles">0</div>
+                                <div class="stat-box-label">Vehicles</div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-box-icon icon-blue"><i class="fas fa-shirt"></i></div>
+                            <div class="stat-box-info">
+                                <div class="stat-box-value" id="stat-clothing">0</div>
+                                <div class="stat-box-label">Clothing</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-bar" id="filter-bar">
+                        <button class="filter-chip active" data-filter="all">
+                            <i class="fas fa-layer-group"></i> All <span class="filter-count" id="count-all">0</span>
+                        </button>
+                        <button class="filter-chip" data-filter="script">
+                            <i class="fas fa-code"></i> Scripts <span class="filter-count" id="count-script">0</span>
+                        </button>
+                        <button class="filter-chip" data-filter="maps">
+                            <i class="fas fa-map"></i> Maps <span class="filter-count" id="count-maps">0</span>
+                        </button>
+                        <button class="filter-chip" data-filter="vehicle">
+                            <i class="fas fa-car"></i> Vehicles <span class="filter-count" id="count-vehicle">0</span>
+                        </button>
+                        <button class="filter-chip" data-filter="clothing">
+                            <i class="fas fa-shirt"></i> Clothing <span class="filter-count" id="count-clothing">0</span>
+                        </button>
+                        <button class="filter-chip" data-filter="tool">
+                            <i class="fas fa-wrench"></i> Tools <span class="filter-count" id="count-tool">0</span>
+                        </button>
+                        <button class="filter-chip" data-filter="fashion">
+                            <i class="fas fa-gem"></i> Fashion <span class="filter-count" id="count-fashion">0</span>
+                        </button>
+                    </div>
+
+                    <div class="results-info">
+                        <span>Showing <strong id="visible-count">0</strong> resources</span>
+                    </div>
+
+                    <div class="resources-grid" id="resources-grid"></div>
+                </div>
+
+                <!-- ADMIN VIEW -->
+                <div class="view-panel hidden" id="admin-view">
+                    <div class="admin-header">
+                        <div>
+                            <h2 class="admin-title"><i class="fas fa-crown"></i> Admin Panel</h2>
+                            <p class="admin-subtitle">Manage your resources and content</p>
+                        </div>
+                        <button class="btn btn-primary" id="open-add-modal">
+                            <i class="fas fa-plus"></i> Add Resource
+                        </button>
+                    </div>
+
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Badge</th>
+                                    <th>Downloads</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- DETAIL MODAL -->
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal modal-detail">
+            <div class="modal-detail-preview" id="detail-preview"></div>
+            <div class="modal-detail-body">
+                <button class="modal-detail-close" id="detail-close"><i class="fas fa-xmark"></i></button>
+                <div class="detail-header">
+                    <div>
+                        <span class="detail-cat-tag" id="detail-cat-badge"></span>
+                        <h3 class="detail-title" id="detail-title"></h3>
+                    </div>
+                    <div class="detail-stats">
+                        <span class="detail-stat"><i class="fas fa-tag"></i> <span id="detail-price"></span></span>
+                        <span class="detail-stat"><i class="fas fa-star"></i> <span id="detail-rating"></span></span>
+                        <span class="detail-stat"><i class="fas fa-clock"></i> <span id="detail-time"></span></span>
+                    </div>
+                </div>
+                <p class="detail-desc" id="detail-desc"></p>
+                <div class="detail-actions">
+                    <button class="btn btn-purchase"><i class="fas fa-shopping-cart"></i> Purchase Resource</button>
+                    <button class="btn btn-ghost"><i class="fas fa-bookmark"></i> Save</button>
+                    <button class="btn btn-ghost"><i class="fas fa-flag"></i> Report</button>
+                </div>
+                <div class="detail-reactions">
+                    <span class="detail-reactions-label">Reactions</span>
+                    <div class="reactions-row" id="reactions-list">
+                        <button class="reaction-pill" data-reaction="fire"><span class="reaction-emoji">🔥</span><span class="reaction-count">0</span></button>
+                        <button class="reaction-pill" data-reaction="heart"><span class="reaction-emoji">❤️</span><span class="reaction-count">0</span></button>
+                        <button class="reaction-pill" data-reaction="thumbsup"><span class="reaction-emoji">👍</span><span class="reaction-count">0</span></button>
+                        <button class="reaction-pill" data-reaction="rofl"><span class="reaction-emoji">🤣</span><span class="reaction-count">0</span></button>
+                        <button class="reaction-pill" data-reaction="party"><span class="reaction-emoji">🎉</span><span class="reaction-count">0</span></button>
+                        <button class="reaction-pill" data-reaction="wow"><span class="reaction-emoji">😮</span><span class="reaction-count">0</span></button>
+                        <button class="reaction-pill" data-reaction="sad"><span class="reaction-emoji">😢</span><span class="reaction-count">0</span></button>
+                        <button class="reaction-pill" data-reaction="angry"><span class="reaction-emoji">😡</span><span class="reaction-count">0</span></button>
+                        <button class="reaction-pill" data-reaction="thumbsdown"><span class="reaction-emoji">👎</span><span class="reaction-count">0</span></button>
+                    </div>
+                </div>
+                <div class="detail-comments">
+                    <span class="detail-comments-label">Comments (<span id="comment-count">0</span>)</span>
+                    <div class="comment-input-row">
+                        <input type="text" class="comment-input" id="comment-input" placeholder="Write a comment...">
+                        <button class="comment-submit" id="comment-send"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                    <div class="comments-list" id="comments-list">
+                        <div class="no-comments">No comments yet.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT RESOURCE MODAL -->
+    <div class="modal-overlay" id="resource-modal">
+        <div class="modal modal-form">
+            <div class="modal-form-header">
+                <h3 id="modal-title">Add Resource</h3>
+                <button class="modal-form-close" id="modal-close"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div class="modal-form-body">
+                <input type="hidden" id="edit-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" id="form-name" placeholder="Resource name">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="form-category">
+                            <option value="script">Script</option>
+                            <option value="maps">Maps & MLO</option>
+                            <option value="vehicle">Vehicle</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="tool">Tool</option>
+                            <option value="fashion">Fashion</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="form-description" rows="3" placeholder="Describe this resource..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Badge</label>
+                        <select id="form-badge">
+                            <option value="">None</option>
+                            <option value="new">New</option>
+                            <option value="hot">Hot</option>
+                            <option value="updated">Updated</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Price</label>
+                        <input type="text" id="form-price" placeholder="$0.00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="text" id="form-image" placeholder="https://example.com/image.png">
+                    </div>
+                    <div class="form-group">
+                        <label>YouTube URL</label>
+                        <input type="text" id="form-youtube" placeholder="https://youtube.com/watch?v=...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Upload Images (max 5)</label>
+                    <label for="form-images" class="file-upload-label"><i class="fas fa-cloud-arrow-up"></i> Choose files...</label>
+                    <input type="file" id="form-images" accept="image/*,video/*,.gif" multiple>
+                    <div class="image-preview-grid" id="image-preview-grid"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Downloads</label>
+                        <input type="text" id="form-downloads" placeholder="e.g. 12.4k">
+                    </div>
+                    <div class="form-group">
+                        <label>Rating</label>
+                        <input type="text" id="form-rating" placeholder="e.g. 4.9">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-form-footer">
+                <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+                <button class="btn btn-primary" id="modal-save"><i class="fas fa-check"></i> Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showToast(type, title, message, duration = 4000) {
+            const container = document.getElementById('toast-container');
+            const icons = { success:'fa-check-circle', error:'fa-circle-xmark', info:'fa-circle-info', warning:'fa-triangle-exclamation' };
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<div class="toast-icon"><i class="fas ${icons[type]}"></i></div><div class="toast-body"><div class="toast-title">${title}</div><div class="toast-message">${message}</div></div><button class="toast-close"><i class="fas fa-xmark"></i></button><div class="toast-progress"></div>`;
+            container.appendChild(toast);
+            const timer = setTimeout(() => removeToast(toast), duration);
+            toast.querySelector('.toast-close').addEventListener('click', () => { clearTimeout(timer); removeToast(toast); });
+        }
+        function removeToast(toast) {
+            if (!toast || toast.classList.contains('toast-out')) return;
+            toast.classList.add('toast-out');
+            setTimeout(() => toast.remove(), 300);
+        }
+        function showConfirmDialog(title, message) {
+            return new Promise((resolve) => {
+                const overlay = document.createElement('div');
+                overlay.className = 'confirm-overlay';
+                overlay.innerHTML = `<div class="confirm-card"><div class="confirm-icon"><i class="fas fa-trash-can"></i></div><h3>${title}</h3><p>${message}</p><div class="confirm-actions"><button class="btn btn-ghost confirm-no">Cancel</button><button class="btn btn-danger confirm-yes">Delete</button></div></div>`;
+                document.body.appendChild(overlay);
+                overlay.querySelector('.confirm-no').onclick = () => { overlay.remove(); resolve(false); };
+                overlay.querySelector('.confirm-yes').onclick = () => { overlay.remove(); resolve(true); };
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = <%- JSON.stringify(user) %>;
+            let resources = [];
+            let activeFilter = 'all';
+            let searchQuery = '';
+
+            const grid = document.getElementById('resources-grid');
+            const searchInput = document.getElementById('search-input');
+            const filterChips = document.querySelectorAll('.filter-chip');
+            const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+            const visibleCountEl = document.getElementById('visible-count');
+            const browseView = document.getElementById('browse-view');
+            const adminView = document.getElementById('admin-view');
+            const tableBody = document.getElementById('admin-table-body');
+
+            document.getElementById('sidebar-toggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('sidebar-open');
+            });
+
+            function getCategoryIcon(cat) {
+                const icons = { script:'fa-code', maps:'fa-map', vehicle:'fa-car', clothing:'fa-shirt', tool:'fa-wrench', fashion:'fa-gem' };
+                return icons[cat] || 'fa-folder';
+            }
+            function getCategoryLabel(cat) {
+                const labels = { script:'Script', maps:'Maps', vehicle:'Vehicle', clothing:'Clothing', tool:'Tool', fashion:'Fashion' };
+                return labels[cat] || cat;
+            }
+            function getBadgeHTML(badge) {
+                if (!badge) return '';
+                return `<span class="badge badge-${badge}">${badge.charAt(0).toUpperCase() + badge.slice(1)}</span>`;
+            }
+
+            let cardIntervals = [];
+
+            function renderCards() {
+                cardIntervals.forEach(id => clearInterval(id));
+                cardIntervals = [];
+                let count = 0;
+                grid.innerHTML = '';
+
+                resources.forEach(r => {
+                    const catMatch = activeFilter === 'all' || r.category === activeFilter;
+                    const match = !searchQuery || r.name.toLowerCase().includes(searchQuery) || r.description.toLowerCase().includes(searchQuery);
+                    if (!catMatch || !match) return;
+                    count++;
+
+                    const images = r.images && r.images.length ? r.images : [];
+                    const primaryImg = r.image || (images.length ? images[0] : '');
+                    const multiImg = images.length > 1;
+
+                    let imageBlock = '';
+                    if (multiImg) {
+                        const slides = images.map(img => `<div class="card-slide"><img src="${img}" alt="${r.name}"></div>`).join('');
+                        const dots = images.map((_, i) => `<span class="card-dot${i === 0 ? ' active' : ''}"></span>`).join('');
+                        imageBlock = `<div class="card-media card-media-slider" data-idx="${count - 1}"><div class="card-slider">${slides}</div>${getBadgeHTML(r.badge)}<div class="card-dots">${dots}</div><div class="card-hover"><i class="fas fa-eye"></i></div></div>`;
+                    } else {
+                        const bg = primaryImg ? `<img src="${primaryImg}" alt="${r.name}">` : `<i class="fas ${getCategoryIcon(r.category)}"></i>`;
+                        imageBlock = `<div class="card-media">${bg}${getBadgeHTML(r.badge)}<div class="card-hover"><i class="fas fa-eye"></i></div></div>`;
+                    }
+
+                    grid.innerHTML += `<div class="resource-card" data-id="${r.id}" data-name="${r.name}" data-cat="${r.category}">
+                        ${imageBlock}
+                        <div class="card-body">
+                            <div class="card-tags"><span class="tag tag-${r.category}"><i class="fas ${getCategoryIcon(r.category)}"></i> ${getCategoryLabel(r.category)}</span></div>
+                            <h3 class="card-title">${r.name}</h3>
+                            <p class="card-desc">${r.description}</p>
+                            <div class="card-meta">
+                                <span><i class="fas fa-tag"></i> ${r.price || 'Free'}</span>
+                                <span><i class="fas fa-star"></i> ${r.rating || '5.0'}</span>
+                                <span><i class="fas fa-clock"></i> ${r.time || ''}</span>
+                            </div>
+                            <button class="btn btn-purchase-sm"><i class="fas fa-shopping-cart"></i> Purchase</button>
+                        </div>
+                    </div>`;
+                });
+
+                grid.querySelectorAll('.resource-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        if (e.target.closest('.btn')) return;
+                        const r = resources.find(x => x.id === card.dataset.id);
+                        if (r) openDetailModal(r);
+                    });
+
+                    const slider = card.querySelector('.card-media-slider');
+                    if (slider) {
+                        const idx = resources.findIndex(r => r.id === card.dataset.id);
+                        const r = resources[idx];
+                        if (r && r.images && r.images.length > 1) {
+                            let ci = 0;
+                            const imgs = r.images;
+                            const timer = setInterval(() => {
+                                ci = (ci + 1) % imgs.length;
+                                const sl = slider.querySelector('.card-slider');
+                                if (sl) sl.style.transform = `translateX(-${ci * 100}%)`;
+                                slider.querySelectorAll('.card-dot').forEach((d, j) => d.classList.toggle('active', j === ci));
+                            }, 5000);
+                            cardIntervals.push(timer);
+                            slider.querySelectorAll('.card-dot').forEach(dot => {
+                                dot.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    const di = Array.from(dot.parentNode.children).indexOf(dot);
+                                    ci = di;
+                                    const sl = slider.querySelector('.card-slider');
+                                    if (sl) sl.style.transform = `translateX(-${di * 100}%)`;
+                                    slider.querySelectorAll('.card-dot').forEach(d => d.classList.remove('active'));
+                                    dot.classList.add('active');
+                                });
+                            });
+                        }
+                    }
+                });
+
+                visibleCountEl.textContent = count;
+                if (count === 0) grid.innerHTML = `<div class="empty-state"><i class="fas fa-search"></i><p>No resources found</p></div>`;
+            }
+
+            function renderTable() {
+                tableBody.innerHTML = '';
+                resources.forEach(r => {
+                    tableBody.innerHTML += `<tr>
+                        <td class="td-name">${r.name}</td>
+                        <td><span class="tag tag-${r.category}">${getCategoryLabel(r.category)}</span></td>
+                        <td>${r.badge ? getBadgeHTML(r.badge) : '<span class="td-empty">-</span>'}</td>
+                        <td class="td-downloads">${r.downloads || '0'}</td>
+                        <td class="td-actions">
+                            <button class="btn btn-sm btn-edit" onclick="editResource('${r.id}')"><i class="fas fa-pen"></i></button>
+                            <button class="btn btn-sm btn-delete" onclick="deleteResource('${r.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+                });
+            }
+
+            function updateStats() {
+                const counts = { script:0, maps:0, vehicle:0, clothing:0, tool:0, fashion:0 };
+                resources.forEach(r => { if (counts[r.category] !== undefined) counts[r.category]++; });
+                document.getElementById('stat-scripts').textContent = counts.script;
+                document.getElementById('stat-maps').textContent = counts.maps;
+                document.getElementById('stat-vehicles').textContent = counts.vehicle;
+                document.getElementById('stat-clothing').textContent = counts.clothing;
+                document.getElementById('count-all').textContent = resources.length;
+                ['script','maps','vehicle','clothing','tool','fashion'].forEach(cat => {
+                    const el = document.getElementById(`count-${cat}`);
+                    if (el) el.textContent = counts[cat];
+                });
+            }
+
+            function applyFilters() { renderCards(); updateStats(); }
+
+            filterChips.forEach(chip => {
+                chip.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    filterChips.forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    activeFilter = chip.dataset.filter;
+                    applyFilters();
+                });
+            });
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    navLinks.forEach(n => n.classList.remove('active'));
+                    link.classList.add('active');
+                    const view = link.dataset.view;
+                    if (view === 'admin') {
+                        browseView.classList.add('hidden');
+                        adminView.classList.remove('hidden');
+                        renderTable();
+                    } else {
+                        browseView.classList.remove('hidden');
+                        adminView.classList.add('hidden');
+                        const cat = link.dataset.filter;
+                        if (cat) {
+                            activeFilter = cat;
+                            filterChips.forEach(c => c.classList.toggle('active', c.dataset.filter === cat));
+                        } else {
+                            activeFilter = 'all';
+                            filterChips.forEach(c => c.classList.toggle('active', c.dataset.filter === 'all'));
+                        }
+                        applyFilters();
+                    }
+                    document.getElementById('sidebar').classList.remove('sidebar-open');
+                });
+            });
+
+            searchInput.addEventListener('input', (e) => { searchQuery = e.target.value.toLowerCase(); applyFilters(); });
+
+            document.getElementById('grid-view-btn').addEventListener('click', () => {
+                grid.classList.remove('list-layout');
+                document.getElementById('grid-view-btn').classList.add('active');
+                document.getElementById('list-view-btn').classList.remove('active');
+            });
+            document.getElementById('list-view-btn').addEventListener('click', () => {
+                grid.classList.add('list-layout');
+                document.getElementById('list-view-btn').classList.add('active');
+                document.getElementById('grid-view-btn').classList.remove('active');
+            });
+
+            const resourceModal = document.getElementById('resource-modal');
+            let uploadedFiles = [];
+            let uploadedPaths = [];
+
+            function renderImagePreviews() {
+                const el = document.getElementById('image-preview-grid');
+                el.innerHTML = '';
+                uploadedFiles.forEach((file, i) => {
+                    const item = document.createElement('div');
+                    item.className = 'preview-item';
+                    let media;
+                    if (file instanceof File) {
+                        const url = URL.createObjectURL(file);
+                        media = file.type.startsWith('video/') ? document.createElement('video') : document.createElement('img');
+                        media.src = url; media.muted = true; media.style.pointerEvents = 'none';
+                    } else {
+                        const isVid = file.match(/\.(mp4|webm|ogg|mov)$/i);
+                        media = isVid ? document.createElement('video') : document.createElement('img');
+                        media.src = file; media.muted = true; media.style.pointerEvents = 'none';
+                    }
+                    item.appendChild(media);
+                    const rm = document.createElement('button');
+                    rm.className = 'preview-remove'; rm.innerHTML = '<i class="fas fa-xmark"></i>';
+                    rm.addEventListener('click', () => { uploadedFiles.splice(i, 1); if (uploadedPaths[i]) uploadedPaths.splice(i, 1); renderImagePreviews(); });
+                    item.appendChild(rm); el.appendChild(item);
+                });
+            }
+
+            document.getElementById('form-images').addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                const rem = 5 - uploadedFiles.length;
+                if (rem <= 0) return showToast('warning', 'Limit Reached', 'Maximum 5 images allowed');
+                uploadedFiles = uploadedFiles.concat(files.slice(0, rem));
+                renderImagePreviews(); e.target.value = '';
+            });
+
+            function openModal(edit, r) {
+                uploadedFiles = []; uploadedPaths = [];
+                document.getElementById('image-preview-grid').innerHTML = '';
+                document.getElementById('modal-title').textContent = edit ? 'Edit Resource' : 'Add Resource';
+                document.getElementById('edit-id').value = edit ? r.id : '';
+                document.getElementById('form-name').value = edit ? r.name : '';
+                document.getElementById('form-category').value = edit ? r.category : 'script';
+                document.getElementById('form-description').value = edit ? r.description : '';
+                document.getElementById('form-badge').value = edit ? (r.badge || '') : '';
+                document.getElementById('form-price').value = edit ? (r.price || '$0.00') : '$0.00';
+                document.getElementById('form-image').value = edit ? (r.image || '') : '';
+                document.getElementById('form-youtube').value = edit ? (r.youtube || '') : '';
+                document.getElementById('form-downloads').value = edit ? (r.downloads || '') : '';
+                document.getElementById('form-rating').value = edit ? (r.rating || '') : '';
+                if (edit && r.images && r.images.length) { uploadedPaths = [...r.images]; uploadedFiles = [...r.images]; renderImagePreviews(); }
+                resourceModal.classList.add('active');
+            }
+            function closeModal() { resourceModal.classList.remove('active'); }
+
+            document.getElementById('open-add-modal').addEventListener('click', () => openModal(false));
+            document.getElementById('modal-close').addEventListener('click', closeModal);
+            document.getElementById('modal-cancel').addEventListener('click', closeModal);
+            resourceModal.addEventListener('click', (e) => { if (e.target === resourceModal) closeModal(); });
+
+            document.getElementById('modal-save').addEventListener('click', async () => {
+                const editId = document.getElementById('edit-id').value;
+                const data = {
+                    name: document.getElementById('form-name').value.trim(),
+                    category: document.getElementById('form-category').value,
+                    description: document.getElementById('form-description').value.trim(),
+                    badge: document.getElementById('form-badge').value,
+                    price: document.getElementById('form-price').value.trim() || '$0.00',
+                    image: document.getElementById('form-image').value.trim(),
+                    youtube: document.getElementById('form-youtube').value.trim(),
+                    downloads: document.getElementById('form-downloads').value.trim() || '0',
+                    rating: document.getElementById('form-rating').value.trim() || '5.0',
+                    time: editId ? undefined : 'Just now'
+                };
+                if (!data.name || !data.description) return showToast('warning', 'Validation', 'Name and description are required');
+                if (uploadedFiles.length > 0) {
+                    const fd = new FormData();
+                    uploadedFiles.forEach(f => { if (f instanceof File) fd.append('images', f); });
+                    if (fd.has('images')) {
+                        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+                        const d = await res.json();
+                        if (d.images && d.images.length) data.images = (data.images || []).concat(d.images);
+                    }
+                }
+                if (!data.images) data.images = uploadedPaths.length ? uploadedPaths : [];
+                const res = editId
+                    ? await fetch(`/api/resources/${editId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) })
+                    : await fetch('/api/resources', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+                const result = await res.json();
+                if (result.error) return showToast('error', 'Error', result.error);
+                closeModal();
+                showToast('success', 'Saved', editId ? 'Resource updated' : 'Resource added');
+                loadResources();
+            });
+
+            window.editResource = (id) => { const r = resources.find(x => x.id === id); if (r) openModal(true, r); };
+            window.deleteResource = async (id) => {
+                const ok = await showConfirmDialog('Delete Resource', 'Are you sure you want to delete this resource?');
+                if (!ok) return;
+                await fetch(`/api/resources/${id}`, { method:'DELETE' });
+                showToast('success', 'Deleted', 'Resource has been removed');
+                loadResources();
+            };
+
+            const detailModal = document.getElementById('detail-modal');
+            let currentDetailId = null;
+            let resourceComments = {};
+            let resourceReactions = {};
+            let galleryImages = [];
+            let galleryIndex = 0;
+            let galleryInterval = null;
+
+            function startAutoSlide() { clearInterval(galleryInterval); galleryInterval = setInterval(() => { galleryIndex = (galleryIndex + 1) % galleryImages.length; renderGallery(false); }, 5000); }
+            function stopAutoSlide() { clearInterval(galleryInterval); galleryInterval = null; }
+
+            function renderGallery() {
+                const el = document.getElementById('detail-preview');
+                if (galleryImages.length === 0) {
+                    const r = resources.find(x => x.id === currentDetailId);
+                    if (r && r.youtube) {
+                        const match = r.youtube.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
+                        if (match) { el.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen></iframe>`; return; }
+                    }
+                    if (r && r.image) { el.innerHTML = `<img src="${r.image}" alt="${r.name}">`; return; }
+                    if (r) { el.innerHTML = `<div class="gallery-placeholder"><i class="fas ${getCategoryIcon(r.category)}"></i></div>`; return; }
+                    return;
+                }
+                stopAutoSlide();
+                const src = galleryImages[galleryIndex];
+                const isVid = src.match(/\.(mp4|webm|ogg|mov)$/i);
+                el.innerHTML = isVid
+                    ? `<video src="${src}" controls autoplay muted></video>`
+                    : `<img src="${src}" alt="Resource media">`;
+                if (galleryImages.length > 1) {
+                    el.innerHTML += `<button class="gallery-btn gallery-prev" id="gal-prev"><i class="fas fa-chevron-left"></i></button><button class="gallery-btn gallery-next" id="gal-next"><i class="fas fa-chevron-right"></i></button><div class="gallery-counter">${galleryIndex + 1} / ${galleryImages.length}</div>`;
+                    document.getElementById('gal-prev').addEventListener('click', () => { stopAutoSlide(); galleryIndex = (galleryIndex - 1 + galleryImages.length) % galleryImages.length; renderGallery(); });
+                    document.getElementById('gal-next').addEventListener('click', () => { stopAutoSlide(); galleryIndex = (galleryIndex + 1) % galleryImages.length; renderGallery(); });
+                    if (!isVid) startAutoSlide();
+                }
+            }
+
+            function openDetailModal(r) {
+                currentDetailId = r.id;
+                galleryImages = r.images && r.images.length ? [...r.images] : [];
+                galleryIndex = 0;
+                document.getElementById('detail-title').textContent = r.name;
+                document.getElementById('detail-desc').textContent = r.description || 'No description provided';
+                document.getElementById('detail-price').textContent = r.price || 'Free';
+                document.getElementById('detail-rating').textContent = r.rating || '5.0';
+                document.getElementById('detail-time').textContent = r.time || '';
+                const badge = document.getElementById('detail-cat-badge');
+                badge.className = `detail-cat-tag tag tag-${r.category}`;
+                badge.innerHTML = `<i class="fas ${getCategoryIcon(r.category)}"></i> ${getCategoryLabel(r.category)}`;
+                renderGallery();
+                if (!resourceComments[r.id]) resourceComments[r.id] = [];
+                if (!resourceReactions[r.id]) resourceReactions[r.id] = { fire:1, heart:0, thumbsup:0, rofl:0, party:0, wow:0, sad:0, angry:0, thumbsdown:0 };
+                renderComments(r.id); renderReactions(r.id);
+                detailModal.classList.add('active');
+            }
+            function closeDetailModal() { stopAutoSlide(); detailModal.classList.remove('active'); currentDetailId = null; }
+            document.getElementById('detail-close').addEventListener('click', closeDetailModal);
+            detailModal.addEventListener('click', (e) => { if (e.target === detailModal) closeDetailModal(); });
+
+            function renderComments(id) {
+                const list = document.getElementById('comments-list');
+                const comments = resourceComments[id] || [];
+                document.getElementById('comment-count').textContent = comments.length;
+                if (comments.length === 0) { list.innerHTML = '<div class="no-comments">No comments yet.</div>'; return; }
+                list.innerHTML = comments.map(c => `<div class="comment-item"><div class="comment-avatar">${c.author.charAt(0).toUpperCase()}</div><div class="comment-content"><div class="comment-author">${c.author}</div><div class="comment-text">${c.text}</div><div class="comment-time">${c.time}</div></div></div>`).join('');
+            }
+
+            function renderReactions(id) {
+                const reactions = resourceReactions[id] || {};
+                document.querySelectorAll('#reactions-list .reaction-pill').forEach(btn => {
+                    const type = btn.dataset.reaction;
+                    btn.querySelector('.reaction-count').textContent = reactions[type] || 0;
+                });
+            }
+
+            document.querySelectorAll('#reactions-list .reaction-pill').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!currentDetailId) return;
+                    const type = btn.dataset.reaction;
+                    if (!resourceReactions[currentDetailId]) resourceReactions[currentDetailId] = {};
+                    resourceReactions[currentDetailId][type] = (resourceReactions[currentDetailId][type] || 0) + 1;
+                    btn.classList.toggle('active'); renderReactions(currentDetailId);
+                });
+            });
+
+            document.getElementById('comment-send').addEventListener('click', () => {
+                const input = document.getElementById('comment-input');
+                const text = input.value.trim();
+                if (!text || !currentDetailId) return;
+                if (!resourceComments[currentDetailId]) resourceComments[currentDetailId] = [];
+                resourceComments[currentDetailId].push({ author: user.username, text, time: 'Just now' });
+                input.value = ''; renderComments(currentDetailId);
+            });
+            document.getElementById('comment-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('comment-send').click(); });
+
+            async function createTicket(name, btn) {
+                if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...'; }
+                try {
+                    const res = await fetch('/api/tickets', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason: `Purchase: ${name}` })
+                    });
+                    const data = await res.json();
+                    if (data.error) {
+                        showToast('error', 'Error', data.error);
+                        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Purchase'; }
+                    } else {
+                        showToast('success', 'Ticket Created', `Opening Discord for "${name}"...`);
+                        window.location.href = data.discordUrl;
+                        setTimeout(() => window.open(data.webUrl, '_blank'), 2000);
+                    }
+                } catch (err) {
+                    showToast('error', 'Failed', err.message);
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Purchase'; }
+                }
+            }
+
+            document.querySelector('.btn-purchase').addEventListener('click', async function() {
+                await createTicket(document.getElementById('detail-title').textContent, this);
+            });
+
+            grid.addEventListener('click', async (e) => {
+                const btn = e.target.closest('.btn-purchase-sm');
+                if (!btn) return;
+                e.stopPropagation();
+                const card = btn.closest('.resource-card');
+                const name = card.querySelector('.card-title').textContent;
+                await createTicket(name, btn);
+            });
+
+            async function loadResources() {
+                const res = await fetch('/api/resources');
+                resources = await res.json();
+                applyFilters();
+                if (user.isAdmin) renderTable();
+            }
+
+            document.getElementById('add-resource-btn').addEventListener('click', () => {
+                if (user.isAdmin) {
+                    browseView.classList.add('hidden');
+                    adminView.classList.remove('hidden');
+                    navLinks.forEach(n => n.classList.remove('active'));
+                    document.querySelector('[data-view="admin"]').classList.add('active');
+                    openModal(false);
+                }
+            });
+
+            loadResources();
+        });
+    </script>
+</body>
+</html>
