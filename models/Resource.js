@@ -12,6 +12,6 @@ const resourceSchema = new mongoose.Schema({
     downloads: { type: String, default: '0' },
     rating: { type: String, default: '5.0' },
     time: { type: String, default: 'Just now' }
-}, { timestamps: true });
+}, { timestamps: true, toJSON: { virtuals: true } });
 
 module.exports = mongoose.model('Resource', resourceSchema);

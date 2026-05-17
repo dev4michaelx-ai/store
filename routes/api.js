@@ -13,8 +13,8 @@ const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024, files: 5 
 
 router.get('/resources', async (req, res) => {
     try {
-        const resources = await Resource.find().sort({ createdAt: -1 });
-        res.json(resources);
+        const resources = await Resource.find().sort({ createdAt: -1 }).lean();
+        res.json(resources.map(r => ({ ...r, id: r._id.toString() })));
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
