@@ -164,6 +164,8 @@ img, video { display: block; max-width: 100%; }
 }
 .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.hero-logo { margin-bottom: 24px; }
+.hero-logo-img { width: 220px; height: auto; object-fit: contain; filter: drop-shadow(0 0 30px rgba(99,102,241,0.4)); }
 .hero-title { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 900; line-height: 1.1; margin-bottom: 20px; }
 .gradient-text {
     background: linear-gradient(135deg, var(--primary) 0%, #a78bfa 50%, #7c3aed 100%);
